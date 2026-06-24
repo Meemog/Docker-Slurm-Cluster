@@ -1,0 +1,49 @@
+services:
+  login:
+    build: .
+    container_name: login01
+    hostname: login01
+    ports:
+      - "2222:22"
+    environment:
+      ROLE: login
+    volumes:
+      - ./cluster_key:/home/dev/.ssh/id_ed25519:ro
+      - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
+      - ./slurm.conf:/etc/slurm/slurm.conf:ro
+      - ./munge.key:/tmp/munge.key:ro
+    command: ["/entrypoint.sh"]
+    networks:
+      - cluster
+
+  node1:
+    build: .
+    container_name: node1
+    hostname: node1
+    environment:
+      ROLE: compute
+    volumes:
+      - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
+      - ./slurm.conf:/etc/slurm/slurm.conf:ro
+      - ./munge.key:/tmp/munge.key:ro
+    command: ["/entrypoint.sh"]
+    networks:
+      - cluster
+
+  node2:
+    build: .
+    container_name: node2
+    hostname: node2
+    environment:
+      ROLE: compute
+    volumes:
+      - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
+      - ./slurm.conf:/etc/slurm/slurm.conf:ro
+      - ./munge.key:/tmp/munge.key:ro
+    command: ["/entrypoint.sh"]
+    networks:
+      - cluster
+
+networks:
+  cluster:
+    driver: bridge
