@@ -1,2 +1,6 @@
 docker-compose.yml
 slurm.conf
+authorized_keys
+cluster_key
+cluster_key.pub
+munge.key
