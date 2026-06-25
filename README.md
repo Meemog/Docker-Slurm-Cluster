@@ -2,7 +2,7 @@
 
 Run
 ```sh
-$ docker compose up
+$ ./cluster-up <Num Nodes>
 ```
 
 Wait ~10 mins
