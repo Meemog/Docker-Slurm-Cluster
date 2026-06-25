@@ -15,7 +15,13 @@ RUN dnf -y groupinstall "Development Tools" && \
     && dnf clean all
 
 RUN groupadd -r slurm && useradd -r -g slurm slurm
+
 RUN useradd -m dev
+
+# Make the dev user a sudouser
+RUN usermod -aG wheel dev
+RUN echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev && \
+    chmod 0440 /etc/sudoers.d/dev
 
 RUN mkdir -p /var/log/munge /var/lib/munge /run/munge && \
     chown -R munge:munge /var/log/munge /var/lib/munge /run/munge && \
