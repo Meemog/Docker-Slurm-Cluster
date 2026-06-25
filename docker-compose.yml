@@ -8,6 +8,7 @@ services:
     environment:
       ROLE: login
     volumes:
+      - home:/home/dev
       - ./cluster_key:/home/dev/.ssh/id_ed25519:ro
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
@@ -23,6 +24,7 @@ services:
     environment:
       ROLE: compute
     volumes:
+      - home:/home/dev
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
@@ -37,12 +39,16 @@ services:
     environment:
       ROLE: compute
     volumes:
+      - home:/home/dev
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
     command: ["/entrypoint.sh"]
     networks:
       - cluster
+
+volumes:
+  home:
 
 networks:
   cluster:
