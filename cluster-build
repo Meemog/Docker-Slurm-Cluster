@@ -44,7 +44,6 @@ services:
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
-    command: ["/entrypoint.sh"]
     networks:
       - cluster
 EOF
@@ -64,7 +63,6 @@ cat >> docker-compose.yml <<EOF
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
-    command: ["/entrypoint.sh"]
     networks:
       - cluster
 EOF

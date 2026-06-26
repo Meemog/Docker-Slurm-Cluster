@@ -1,14 +1,13 @@
 FROM rockylinux:9
 
-RUN dnf -y update && \
-    dnf -y install dnf-plugins-core && \
+RUN dnf -y install dnf-plugins-core && \
     dnf config-manager --set-enabled crb || true && \
-    dnf -y install epel-release && \
-    dnf makecache
+    dnf -y install epel-release
+    
 
 RUN dnf -y groupinstall "Development Tools" && \
     dnf -y install \
-      wget tar perl openssl-devel pam-devel numactl-devel \
+      wget openssl-devel pam-devel numactl-devel \
       hwloc-devel lua-devel readline-devel libibmad libibumad \
       munge munge-devel \
       openssh-server openssh-clients sudo \
@@ -19,7 +18,6 @@ RUN groupadd -r slurm && useradd -r -g slurm slurm
 RUN useradd -m dev
 
 # Make the dev user a sudouser
-RUN usermod -aG wheel dev
 RUN echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev && \
     chmod 0440 /etc/sudoers.d/dev
 
@@ -41,8 +39,7 @@ RUN ./configure \
     --prefix=/usr/local/slurm \
     --sysconfdir=/etc/slurm \
     --with-munge \
-    --disable-dependency-tracking \
-    --disable-cgroup
+    --disable-dependency-tracking
 
 RUN make -j$(nproc) && make install
 
