@@ -1,7 +1,31 @@
 #!/bin/bash
 
-NODES=${1:-3}
 PROJECT_NAME=slightly-less-of-a-cluster
+
+# Default values
+MEM=512
+NODES=2
+
+# Parse flags
+while getopts "m:n:" opt; do
+  case $opt in
+    m)
+      MEM="$OPTARG"
+      ;;
+    n)
+      NODES="$OPTARG"
+      ;;
+    *)
+      echo "Usage: $0 [-m number] [-n number]"
+      exit 1
+      ;;
+  esac
+done
+
+MEM_LIMIT="${MEM}m"
+
+echo "removing old containers"
+docker compose -p $PROJECT_NAME down -v --remove-orphans --rmi all > /dev/null 2>&1
 
 echo "generating docker-compose.yml"
 cat > docker-compose.yml <<EOF
@@ -32,6 +56,7 @@ cat >> docker-compose.yml <<EOF
     build: .
     container_name: node$i
     hostname: node$i
+    mem_limit: $MEM_LIMIT
     environment:
       ROLE: compute
     volumes:
@@ -75,7 +100,7 @@ SelectTypeParameters=CR_Core
 StateSaveLocation=/slurm/state
 SlurmdSpoolDir=/slurm/spool
 
-NodeName=node[1-${NODES}] CPUs=4 State=UNKNOWN
+NodeName=node[1-${NODES}] CPUs=4 RealMemory=${MEM} State=UNKNOWN
 PartitionName=debug Nodes=node[1-${NODES}] Default=YES MaxTime=INFINITE State=UP
 EOF
 
@@ -86,9 +111,6 @@ echo "generating ssh keys"
 rm -f cluster_key cluster_key.pub
 ssh-keygen -t ed25519 -C "" -f cluster_key -N "" > /dev/null
 cat cluster_key.pub > authorized_keys
-
-echo "removing old containers"
-docker compose -p $PROJECT_NAME down -v --remove-orphans --rmi all > /dev/null 2>&1
 
 echo "building containers"
 docker compose -p $PROJECT_NAME up --build --force-recreate
