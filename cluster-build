@@ -32,8 +32,8 @@ cat > docker-compose.yml <<EOF
 services:
   login:
     build: .
-    container_name: login01
-    hostname: login01
+    container_name: login
+    hostname: login
     ports:
       - "2222:22"
     environment:
@@ -85,7 +85,7 @@ ClusterName=cluster
 SlurmUser=slurm
 
 AuthType=auth/munge
-SlurmctldHost=login01
+SlurmctldHost=login
 
 ProctrackType=proctrack/pgid
 TaskPlugin=task/none
@@ -98,6 +98,7 @@ SelectTypeParameters=CR_Core
 StateSaveLocation=/slurm/state
 SlurmdSpoolDir=/slurm/spool
 
+NodeName=login State=DOWN
 NodeName=node[1-${NODES}] CPUs=4 RealMemory=${MEM} State=UNKNOWN
 PartitionName=debug Nodes=node[1-${NODES}] Default=YES MaxTime=INFINITE State=UP
 EOF
