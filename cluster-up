@@ -88,8 +88,7 @@ ssh-keygen -t ed25519 -C "" -f cluster_key -N "" > /dev/null
 cat cluster_key.pub > authorized_keys
 
 echo "removing old containers"
-docker compose -p $PROJECT_NAME -v --rmi all --remove-orphans > /dev/null 2>&1
-docker builder prune -af
+docker compose -p $PROJECT_NAME down -v --remove-orphans --rmi all > /dev/null 2>&1
 
 echo "building containers"
-docker compose -p $PROJECT_NAME up --build
+docker compose -p $PROJECT_NAME up --build --force-recreate
