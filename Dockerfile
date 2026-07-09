@@ -53,13 +53,9 @@ RUN mkdir -p \
       /var/log/slurm \
       /slurm
 
-ENV SLURM_NO_SYSTEMD=1
-
 ENV PATH="/usr/local/slurm/bin:/usr/local/slurm/sbin:$PATH"
 RUN echo 'export PATH=/usr/local/slurm/bin:/usr/local/slurm/sbin:$PATH' \
     > /etc/profile.d/slurm.sh
-
-RUN ssh-keygen -A
 
 RUN rm -f /usr/local/slurm/lib/slurm/task_cgroup.so || true && \
     rm -f /usr/local/slurm/lib/slurm/cgroup*.so || true
