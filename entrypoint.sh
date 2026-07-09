@@ -9,6 +9,16 @@ if [ -f /tmp/munge.key ]; then
     install -m 400 -o munge -g munge /tmp/munge.key /etc/munge/munge.key
 fi
 
+if [ "$MODULE_FRAMEWORK" = "ENV" ]; then
+    dnf install -y environment-modules
+    echo 'module use /data/modulefiles' > /etc/profile.d/z01_modulefiles.sh
+    /home/dev/setup_files/environment-modules.sh
+elif [ "$MODULE_FRAMEWORK" = "LMOD" ]; then
+    dnf install -y Lmod
+    echo 'module use /data/modulefiles/Core' > /etc/profile.d/z01_modulefiles.sh
+    /home/dev/setup_files/lmod-modules.sh
+fi
+
 ssh-keygen -A
 
 echo "Starting munged..."

@@ -2,22 +2,39 @@
 
 PROJECT_NAME=slightly-less-of-a-cluster
 
-# Default values
 MEM=512
 NODES=2
+MODULE=ENV
 
 # Parse flags
-while getopts "m:n:" opt; do
-  case $opt in
-    m)
-      MEM="$OPTARG"
+OPTS=$(getopt -o m:n: --long mem:,nodes:,lmod -n "$0" -- "$@")
+if [[ $? -ne 0 ]]; then
+  echo "Usage: $0 [-m --mem number] [-n --nodes number] [--lmod]"
+  exit 1
+fi
+
+eval set -- "$OPTS"
+
+while true; do
+  case "$1" in
+    -m|--mem)
+      MEM="$2"
+      shift 2
       ;;
-    n)
-      NODES="$OPTARG"
+    -n|--nodes)
+      NODES="$2"
+      shift 2
+      ;;
+    --lmod)
+      MODULE="LMOD"
+      shift
+      ;;
+    --)
+      shift
+      break
       ;;
     *)
-      echo "Usage: $0 [-m number] [-n number]"
-      exit 1
+      break
       ;;
   esac
 done
@@ -38,12 +55,14 @@ services:
       - "2222:22"
     environment:
       ROLE: login
+      MODULE_FRAMEWORK: $MODULE
     volumes:
       - home:/home/dev
       - ./cluster_key:/home/dev/.ssh/id_ed25519:ro
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
+      - ./setup_files:/home/dev/setup_files:ro
     networks:
       - cluster
 EOF
@@ -58,11 +77,13 @@ cat >> docker-compose.yml <<EOF
     mem_limit: $MEM_LIMIT
     environment:
       ROLE: compute
+      MODULE_FRAMEWORK: $MODULE
     volumes:
       - home:/home/dev
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
+      - ./setup_files:/home/dev/setup_files:ro
     networks:
       - cluster
 EOF
