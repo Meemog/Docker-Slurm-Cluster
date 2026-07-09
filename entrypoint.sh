@@ -1,5 +1,4 @@
 #!/bin/bash
-set -ex
 
 # runtime dirs
 install -d -o munge -g munge -m 0700 /var/log/munge /var/lib/munge
