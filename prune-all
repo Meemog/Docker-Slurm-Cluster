@@ -3,3 +3,12 @@
 docker container prune -f
 docker image prune --all --force
 docker volume prune --all --force
+
+rm -f slurm.conf
+rm -f munge.key
+rm -f known_hosts
+rm -f docker-compose.yml
+rm -f cluster_key.pub
+rm -f cluster_key
+rm -f authorized_keys
+rm -rf hostkeys

@@ -4,3 +4,5 @@ authorized_keys
 cluster_key
 cluster_key.pub
 munge.key
+known_hosts
+hostkeys/
