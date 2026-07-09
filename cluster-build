@@ -7,34 +7,36 @@ NODES=2
 MODULE=ENV
 
 # Parse flags
-OPTS=$(getopt -o m:n: --long mem:,nodes:,lmod -n "$0" -- "$@")
-if [[ $? -ne 0 ]]; then
-  echo "Usage: $0 [-m --mem number] [-n --nodes number] [--lmod]"
-  exit 1
-fi
-
-eval set -- "$OPTS"
-
-while true; do
+while [[ $# -gt 0 ]]; do
   case "$1" in
-    -m|--mem)
+    -m)
       MEM="$2"
       shift 2
       ;;
-    -n|--nodes)
+    --mem=*)
+      MEM="${1#*=}"
+      shift
+      ;;
+    -n)
       NODES="$2"
       shift 2
+      ;;
+    --nodes=*)
+      NODES="${1#*=}"
+      shift
       ;;
     --lmod)
       MODULE="LMOD"
       shift
       ;;
-    --)
-      shift
-      break
+    -h|--help)
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod]"
+      exit 0
       ;;
     *)
-      break
+      echo "Unknown option: $1"
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod]"
+      exit 1
       ;;
   esac
 done
