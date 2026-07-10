@@ -17,7 +17,7 @@ $ ssh -i cluster_key dev@localhost -p 2222
 ## Features
 To build the containers with custom settings, use
 ```sh
-$ ./cluster-build [-m --mem memory] [-n --nodes compute nodes] [--module choose module framework] [--database enable database node]
+$ ./cluster-build [-m --mem memory] [-n --nodes compute nodes] [--module=[env|lmod] choose module framework] [--database enable database node]
 ```
 
 ### Memory
