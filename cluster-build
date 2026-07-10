@@ -4,7 +4,7 @@ PROJECT_NAME=slightly-less-of-a-cluster
 
 MEM=512
 NODES=2
-MODULE=ENV
+MODULE=NONE
 DATABASE=false
 
 # Parse flags
@@ -26,8 +26,22 @@ while [[ $# -gt 0 ]]; do
       NODES="${1#*=}"
       shift
       ;;
-    --lmod)
-      MODULE="LMOD"
+    --module=*)
+      value="${1#*=}"
+
+      case "${value,,}" in
+        lmod)
+          MODULE="LMOD"
+          ;;
+        env)
+          MODULE="ENV"
+          ;;
+        *)
+          echo "Invalid module: $value"
+          echo "Valid values are: lmod or env"
+          exit 1
+          ;;
+      esac
       shift
       ;;
     --database)
@@ -78,6 +92,7 @@ done
 echo "generating docker-compose.yml"
 cat > docker-compose.yml <<EOF
 services:
+
   login:
     build: .
     container_name: login
@@ -89,21 +104,33 @@ services:
       MODULE_FRAMEWORK: $MODULE
     volumes:
       - home:/home/dev
+
       - ./cluster_key:/home/dev/.ssh/id_ed25519:ro
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./known_hosts:/home/dev/.ssh/known_hosts:ro
-
       - ./hostkeys/login_ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
       - ./hostkeys/login_ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
 
       - ./munge.key:/tmp/munge.key:ro
-      - ./setup_files:/tmp/setup_files:ro
+
       - ./conf/slurm.conf:/tmp/conf/slurm.conf:ro
 EOF
 
 if [[ "$DATABASE" == true ]]; then
 cat >> docker-compose.yml <<EOF
       - ./conf/slurmdbd.conf:/tmp/conf/slurmdbd.conf:ro
+EOF
+fi
+
+if [[ "$MODULE" == "ENV" ]]; then
+cat >> docker-compose.yml <<EOF
+
+      - ./setup_files/environment-modules.sh:/tmp/setup_files/environment-modules.sh:ro
+EOF
+elif [[ "$MODULE" == "LMOD" ]]; then
+cat >> docker-compose.yml <<EOF
+
+      - ./setup_files/lmod-modules.sh:/tmp/setup_files/lmod-modules.sh:ro
 EOF
 fi
 
@@ -125,19 +152,33 @@ cat >> docker-compose.yml <<EOF
       MODULE_FRAMEWORK: $MODULE
     volumes:
       - home:/home/dev
+
       - ./authorized_keys:/home/dev/.ssh/authorized_keys:ro
       - ./known_hosts:/home/dev/.ssh/known_hosts:ro
-
       - ./hostkeys/node${i}_ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
       - ./hostkeys/node${i}_ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
 
-      - ./conf/slurm.conf:/tmp/conf/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
-      - ./setup_files:/tmp/setup_files:ro
+
+      - ./conf/slurm.conf:/tmp/conf/slurm.conf:ro
+EOF
+if [[ "$MODULE" == "ENV" ]]; then
+cat >> docker-compose.yml <<EOF
+
+      - ./setup_files/environment-modules.sh:/tmp/setup_files/environment-modules.sh:ro
+EOF
+elif [[ "$MODULE" == "LMOD" ]]; then
+cat >> docker-compose.yml <<EOF
+
+      - ./setup_files/lmod-modules.sh:/tmp/setup_files/lmod-modules.sh:ro
+EOF
+fi
+cat >> docker-compose.yml <<EOF
     networks:
       - cluster
 EOF
 done
+
 
 if [[ "$DATABASE" == true ]]; then
 cat >> docker-compose.yml <<EOF
