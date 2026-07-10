@@ -11,15 +11,17 @@ RUN dnf -y install \
         openssl-devel readline-devel \
         ncurses-devel perl \
         wget munge munge-devel \
-        openssh-server openssh-clients sudo \
+        openssh-server openssh-clients sudo mariadb-server mariadb-devel \
     && dnf clean all
 
 
 # Add slurm group and user
 RUN groupadd -r slurm && useradd -r -g slurm slurm
 
-# Add user that can be logged in to
-RUN useradd -m dev
+# Add MariaDB system account and the login user
+RUN getent group mysql >/dev/null || groupadd -r mysql && \
+    getent passwd mysql >/dev/null || useradd -r -g mysql -d /var/lib/mysql -s /sbin/nologin mysql && \
+    useradd -m dev
 
 # Make the dev user a sudouser
 RUN echo "dev ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dev && \
@@ -45,6 +47,7 @@ RUN ./configure \
     --prefix=/usr/local/slurm \
     --sysconfdir=/etc/slurm \
     --with-munge \
+    --with-mysql \
     --disable-dependency-tracking
 
 RUN make -j$(nproc) && make install

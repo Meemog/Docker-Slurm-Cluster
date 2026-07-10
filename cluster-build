@@ -5,6 +5,7 @@ PROJECT_NAME=slightly-less-of-a-cluster
 MEM=512
 NODES=2
 MODULE=ENV
+DATABASE=false
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
@@ -29,13 +30,17 @@ while [[ $# -gt 0 ]]; do
       MODULE="LMOD"
       shift
       ;;
+    --database)
+      DATABASE=true
+      shift
+      ;;
     -h|--help)
-      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod]"
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod] [--database]"
       exit 0
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod]"
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod] [--database]"
       exit 1
       ;;
   esac
@@ -91,9 +96,18 @@ services:
       - ./hostkeys/login_ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
       - ./hostkeys/login_ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
 
-      - ./slurm.conf:/etc/slurm/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
       - ./setup_files:/tmp/setup_files:ro
+      - ./conf/slurm.conf:/tmp/conf/slurm.conf:ro
+EOF
+
+if [[ "$DATABASE" == true ]]; then
+cat >> docker-compose.yml <<EOF
+      - ./conf/slurmdbd.conf:/tmp/conf/slurmdbd.conf:ro
+EOF
+fi
+
+cat >> docker-compose.yml <<EOF
     networks:
       - cluster
 EOF
@@ -117,13 +131,31 @@ cat >> docker-compose.yml <<EOF
       - ./hostkeys/node${i}_ssh_host_ed25519_key:/etc/ssh/ssh_host_ed25519_key:ro
       - ./hostkeys/node${i}_ssh_host_ed25519_key.pub:/etc/ssh/ssh_host_ed25519_key.pub:ro
 
-      - ./slurm.conf:/etc/slurm/slurm.conf:ro
+      - ./conf/slurm.conf:/tmp/conf/slurm.conf:ro
       - ./munge.key:/tmp/munge.key:ro
       - ./setup_files:/tmp/setup_files:ro
     networks:
       - cluster
 EOF
 done
+
+if [[ "$DATABASE" == true ]]; then
+cat >> docker-compose.yml <<EOF
+
+  database:
+    build: .
+    container_name: database
+    hostname: database
+    environment:
+      ROLE: database
+      MODULE_FRAMEWORK: $MODULE
+    volumes:
+      - ./conf:/tmp/conf:ro
+      - ./munge.key:/tmp/munge.key:ro
+    networks:
+      - cluster
+EOF
+fi
 
 cat >> docker-compose.yml <<EOF
 
@@ -135,14 +167,28 @@ networks:
     driver: bridge
 EOF
 
+echo "generating configs"
+mkdir -p conf
+
 echo "generating slurm.conf"
-cat > slurm.conf <<EOF
+cat > conf/slurm.conf <<EOF
 ClusterName=cluster
 
 SlurmUser=slurm
 
 AuthType=auth/munge
 SlurmctldHost=login
+EOF
+
+if [[ "$DATABASE" == true ]] ; then
+cat >> conf/slurm.conf <<EOF
+
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost=database
+EOF
+fi
+
+cat >> conf/slurm.conf <<EOF
 
 ProctrackType=proctrack/pgid
 TaskPlugin=task/none
@@ -160,8 +206,33 @@ NodeName=node[1-${NODES}] CPUs=4 RealMemory=${MEM} State=UNKNOWN
 PartitionName=debug Nodes=node[1-${NODES}] Default=YES MaxTime=INFINITE State=UP
 EOF
 
+if [[ "$DATABASE" == true ]]; then
+echo "generating database daemon config"
+
+cat > conf/slurmdbd.conf <<EOF
+AuthType=auth/munge
+
+SlurmUser=slurm
+
+DbdHost=database
+DbdPort=6819
+
+StorageType=accounting_storage/mysql
+
+StorageHost=localhost
+StorageUser=slurm
+StoragePass=password
+StorageLoc=slurm_acct_db
+
+LogFile=/var/log/slurm/slurmdbd.log
+PidFile=/run/slurmdbd.pid
+
+DebugLevel=info
+EOF
+fi
+
 echo "generating munge.key"
 dd if=/dev/urandom of=./munge.key bs=1 count=1024 status=none
 
 echo "building containers"
-docker compose -p $PROJECT_NAME up --build --force-recreate
+docker compose -p $PROJECT_NAME up --build
