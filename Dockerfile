@@ -11,9 +11,9 @@ RUN dnf -y install \
         openssl-devel readline-devel \
         ncurses-devel perl \
         wget munge munge-devel \
-        openssh-server openssh-clients sudo mariadb-server mariadb-devel \
+        openssh-server openssh-clients sudo \
+        mariadb-server mariadb-devel \
     && dnf clean all
-
 
 # Add slurm group and user
 RUN groupadd -r slurm && useradd -r -g slurm slurm

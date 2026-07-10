@@ -95,6 +95,7 @@ services:
 
   login:
     build: .
+    image: generic-node
     container_name: login
     hostname: login
     ports:
@@ -143,7 +144,7 @@ for i in $(seq 1 "$NODES"); do
 cat >> docker-compose.yml <<EOF
 
   node$i:
-    build: .
+    image: generic-node
     container_name: node$i
     hostname: node$i
     mem_limit: $MEM_LIMIT
@@ -184,7 +185,7 @@ if [[ "$DATABASE" == true ]]; then
 cat >> docker-compose.yml <<EOF
 
   database:
-    build: .
+    image: generic-node
     container_name: database
     hostname: database
     environment:
@@ -193,6 +194,7 @@ cat >> docker-compose.yml <<EOF
     volumes:
       - ./conf:/tmp/conf:ro
       - ./munge.key:/tmp/munge.key:ro
+      - ./setup_files/database.sh:/tmp/setup_files/database.sh:ro
     networks:
       - cluster
 EOF
