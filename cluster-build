@@ -28,8 +28,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --module=*)
       value="${1#*=}"
+      lower_value=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
 
-      case "${value,,}" in
+      case "$lower_value" in
         lmod)
           MODULE="LMOD"
           ;;
@@ -49,12 +50,12 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -h|--help)
-      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod] [--database]"
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--module=module] [--database]"
       exit 0
       ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--lmod] [--database]"
+      echo "Usage: $0 [-m memory|--mem=memory] [-n nodes|--nodes=nodes] [--module=module] [--database]"
       exit 1
       ;;
   esac
